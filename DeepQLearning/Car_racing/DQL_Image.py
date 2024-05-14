@@ -17,7 +17,7 @@ class DeepQNetwork(nn.Module):
         super(DeepQNetwork,self).__init__()
 
         self.input_dims = input_dims
-        self.conv1 = nn.Conv2d(4,32,3,stride=1)
+        self.conv1 = nn.Conv2d(1,32,3,stride=1)
         self.conv2 = nn.Conv2d(32,32,3,stride=1)
         self.fc1 = nn.Linear(2048, 512)
         self.fc2 = nn.Linear(512, n_actions)

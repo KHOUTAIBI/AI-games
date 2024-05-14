@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 import torch.optim as optimum
 import gymnasium as gym
-import gymnasium.wrappers as wrap
+from gymnasium.wrappers import AtariPreprocessing, FrameStack, record_video
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pk
@@ -16,21 +16,32 @@ class DeepQNetwork(nn.Module):
         super(DeepQNetwork,self).__init__()
 
         self.input_dims = input_dims
-        self.conv1 = nn.Conv2d(4,16,8,stride=4)
-        self.conv2 = nn.Conv2d(16,32,4,stride=2)
-        self.conv3 = nn.Conv2d(32,32,3,stride = 1)
-        self.fc1 = nn.Linear(32*7*7, 256)
-        #self.fc2 = nn.Linear(512,256)
-        self.fc2 = nn.Linear(256, n_actions)
+        self.conv1 = nn.Conv2d(1,64,3,stride=1)
+        self.conv2 = nn.Conv2d(64,64,3,stride=1)
+        self.fc1 = nn.Linear(4096, 512)
+        self.fc2 = nn.Linear(512,256)
+        self.fc3 = nn.Linear(256, n_actions)
         self.tanh = nn.Tanh() # activation function on input (transforms into range of -1 to 1)
         self.relu = nn.ReLU()
     
     def forward(self, x):
-        x = self.relu(self.conv1(x))
-        x = self.relu(self.conv2(x))
-        x = self.relu(self.conv3(x).flatten(start_dim=1))
+
+        transform1 = transforms.CenterCrop(40)
+        transform2 = transforms.Grayscale()
+
+        # Convert the image to grayscale
+        x = x.permute(0, 3, 1, 2)
+        x = transform2(x)
+        x = transform1(x)
+
+
+        x = self.conv1(x)
+        x = nn.functional.max_pool2d(x,kernel_size=2)
+        x = self.conv2(x)
+        x = nn.functional.max_pool2d(x,kernel_size=2).flatten(start_dim=1)
         x = self.relu(self.fc1(x))
-        x = self.fc2(x)
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
         return x
 
 
@@ -56,8 +67,8 @@ class Memory():
 
 
 class Agents():
-    def __init__(self, gamma, lr, batch_size, n_actions, input_dims, epsilon, eps_end=0.1, eps_dec = 0.9999, max_mem_size = 100000, min_mem = 4000):
-        self.device = T.device('cuda:2' if T.cuda.is_available() else 'cpu')
+    def __init__(self, gamma, lr, batch_size, n_actions, input_dims, epsilon, eps_end=0.1, eps_dec = 0.9999, max_mem_size = 100000):
+        self.device = T.device('cuda:1' if T.cuda.is_available() else 'cpu')
         self.gamma= gamma
         self.epsilon = epsilon
         self.eps_min = eps_end
@@ -65,12 +76,12 @@ class Agents():
         self.lr = lr
         self.action_space  = [i for i in range(n_actions)]
         self.batch_size = batch_size
-        self.min_mem = min_mem
+
         self.memory = Memory(input_dims,max_mem_size)
 
         self.Q_eval = DeepQNetwork(input_dims, n_actions).to(self.device)
         self.optimizer = optimum.Adam(self.Q_eval.parameters(),lr=self.lr,eps=1e-7)
-        self.loss_fn = nn.HuberLoss()
+        self.loss_fn = nn.MSELoss()
     
     def choose_action(self, observation):
         if np.random.random() > self.epsilon:
@@ -81,8 +92,8 @@ class Agents():
         else:
             return np.random.choice(self.action_space)
 
-    def learn(self, target_res, terminated):
-        if self.memory.mem_cntr < self.min_mem:
+    def learn(self, target_res):
+        if self.memory.mem_cntr < self.batch_size:
             return
 
         max_mem = min(self.memory.mem_cntr, self.memory.mem_size)
@@ -100,7 +111,7 @@ class Agents():
         q_next = target_res(new_state_batch)
         #q_next[terminal_batch] = 0.0
 
-        q_target = reward_batch + self.gamma *(1-terminated) *T.max(q_next, dim=1)[0]
+        q_target = reward_batch + self.gamma * T.max(q_next, dim=1)[0]
 
         self.optimizer.zero_grad()
         loss = self.loss_fn(q_target, q_eval).to(self.device)
@@ -108,18 +119,3 @@ class Agents():
         self.optimizer.step()
 
         self.epsilon = max(self.epsilon*self.eps_dec, self.eps_min)
-
-
-class SkipFrame(gym.Wrapper):
-    def __init__(self, env, skip):
-        super().__init__(env)
-        self._skip = skip
-
-    def step(self, action):
-        total_reward = 0.0
-        for _ in range(self._skip):
-            state, reward, terminated, truncated, info = self.env.step(action)
-            total_reward += reward
-            if terminated:
-                break
-        return state, total_reward, terminated, truncated, info

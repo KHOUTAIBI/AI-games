@@ -10,8 +10,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pk
 import sys
-from torch.nn.parallel import DistributedDataParallel
-from torch.utils.data.distributed import DistributedSampler
 
 class DeepQNetwork(nn.Module):
     def __init__(self, input_dims,n_actions):
@@ -58,14 +56,13 @@ class Memory():
 
 
 class Agents():
-    def __init__(self, gamma, lr, batch_size, n_actions, input_dims, epsilon, eps_end=0.1, eps_dec = 0.9999, max_mem_size = 20000, min_mem = 4000):
-        self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
+    def __init__(self, gamma, lr, batch_size, n_actions, input_dims, epsilon, eps_end=0.1, eps_dec = 0.9999, max_mem_size = 20000):
+        self.device = T.device('cuda:1' if T.cuda.is_available() else 'cpu')
         self.gamma= gamma
         self.epsilon = epsilon
         self.eps_min = eps_end
         self.eps_dec = eps_dec
         self.lr = lr
-        self.min_mem = min_mem
         self.action_space  = [i for i in range(n_actions)]
         self.batch_size = batch_size
 
@@ -85,7 +82,7 @@ class Agents():
             return np.random.choice(self.action_space)
 
     def learn(self, target_res , terminated):
-        if self.memory.mem_cntr < self.min_mem:
+        if self.memory.mem_cntr < self.batch_size:
             return
 
         max_mem = min(self.memory.mem_cntr, self.memory.mem_size)
