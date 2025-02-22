@@ -13,7 +13,7 @@ Welcome to the Reinforcement Learning repository! This repository contains imple
 
 ## Q-Learning
 ### Description
-Q-Learning is a model-free reinforcement learning algorithm that seeks to find the best action to take given the current state. It does this by learning a Q-value function that estimates the expected utility of taking a given action in a given state. You can find the code [here](./src/1_qlearning/).
+Q-Learning is a model-free reinforcement learning algorithm that seeks to find the best action to take given the current state. It does this by learning a Q-value function that estimates the expected utility of taking a given action in a given state. You can find the code [here](./qlearning/).
 
 ### Results
 <img src="./gifs/cartpole.gif" width="500" height="300"/> 
@@ -22,7 +22,7 @@ Q-Learning is a model-free reinforcement learning algorithm that seeks to find t
 ## Deep Q-Learning
 
 ### Description
-Deep Q-Learning (DQN) extends Q-Learning by using a neural network to approximate the Q-value function. This allows it to handle high-dimensional state spaces. You can find the code [here](./src/2_deepqlearning/).
+Deep Q-Learning (DQN) extends Q-Learning by using a neural network to approximate the Q-value function. This allows it to handle high-dimensional state spaces. You can find the code [here](./DeepQlearning/).
 
 ### Results
 <img src="./gifs/lunar.gif" width="500" height="300"/>
@@ -48,7 +48,7 @@ A3C extends A2C by running multiple instances of the environment in parallel, ea
 ## PPO (Proximal Policy Optimization)
 
 ### Description
-PPO is a policy gradient method that uses a surrogate objective function to ensure that the updates do not deviate too far from the previous policy, thereby stabilizing training. You can find the code [here](./src/6_ppo/).
+PPO is a policy gradient method that uses a surrogate objective function to ensure that the updates do not deviate too far from the previous policy, thereby stabilizing training. You can find the code [here](./ppo/).
 
 ### Results
 <img src="./gifs/mario.gif" width="500" height="300"/>
