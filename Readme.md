@@ -22,7 +22,7 @@ Q-Learning is a model-free reinforcement learning algorithm that seeks to find t
 ## Deep Q-Learning
 
 ### Description
-Deep Q-Learning (DQN) extends Q-Learning by using a neural network to approximate the Q-value function. This allows it to handle high-dimensional state spaces. You can find the code [here](./DeepQlearning/).
+Deep Q-Learning (DQN) extends Q-Learning by using a neural network to approximate the Q-value function. This allows it to handle high-dimensional state spaces. You can find the code [here](./DeepQLearning/).
 
 ### Results
 <img src="./gifs/lunar.gif" width="500" height="300"/>
